@@ -1,0 +1,76 @@
+Using the LPC2148 microcontroller, interface two multiplexed 7-segment displays 
+and display a specified two-digit decimal number using multiplexing.
+
+#CODE
+
+
+#include <lpc214x.h>
+
+#define SEG_MASK (0xFFUL << 16)
+#define DIGIT1 (1UL << 10)
+#define DIGIT2 (1UL << 11)
+#define DIGIT_MASK (DIGIT1 | DIGIT2)
+
+unsigned char patterns[10] = {
+    0xC0, 0xF9, 0xA4, 0xB0, 0x99,
+    0x92, 0x82, 0xF8, 0x80, 0x90
+};
+
+void delay(unsigned int count)
+{
+    volatile unsigned int i, j;
+
+    for(i = 0; i < count; i++)
+        for(j = 0; j < 600; j++);
+}
+
+void write_segments(unsigned char pattern)
+{
+    IOCLR1 = SEG_MASK;
+    IOSET1 = ((unsigned long)pattern << 16) & SEG_MASK;
+}
+
+void display_number(unsigned int tens, unsigned int ones)
+{
+    unsigned int refresh;
+
+    for(refresh = 0; refresh < 2000; refresh++)
+    {
+        IOSET0 = DIGIT_MASK;
+
+        write_segments(patterns[tens]);
+        IOCLR0 = DIGIT1;
+        delay(2);
+        IOSET0 = DIGIT1;
+
+        write_segments(patterns[ones]);
+        IOCLR0 = DIGIT2;
+        delay(2);
+        IOSET0 = DIGIT2;
+    }
+}
+
+int main(void)
+{
+    unsigned int number;
+    unsigned int tens, ones;
+
+    PINSEL0 &= ~((3UL << 20) | (3UL << 22));
+    PINSEL2 = 0x00000000UL;
+
+    IODIR0 |= DIGIT_MASK;
+    IODIR1 |= SEG_MASK;
+
+    IOSET0 = DIGIT_MASK;
+    IOSET1 = SEG_MASK;
+
+    number = 42;
+
+    tens = number / 10;
+    ones = number % 10;
+
+    while(1)
+    {
+        display_number(tens, ones);
+    }
+}

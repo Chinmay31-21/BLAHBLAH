@@ -1,0 +1,23 @@
+Using the 8051 microcontroller, write a program using Timer 0 in polling mode to
+generate a 1 kHz square wave on an output pin and verify the waveform using a
+CRO/DSO or Logic Analyzer
+
+#include<reg51.h>
+Sbit wave=P1^0;
+Void main(){
+tmod=0x01;
+wave=0;
+while(1){
+for(i=0;i<1000;i++){
+tr1=0;
+tf1=0;
+th1=0xfe;
+tl1=0x33;
+tr1=1;
+while(tf1==0);
+tr1=0;
+tf1=0;
+wave=~wave;
+}
+}
+}

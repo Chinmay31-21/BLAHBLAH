@@ -1,0 +1,35 @@
+Using the 8051 microcontroller, write a program using Timer 1 in polling mode to
+generate two frequencies, 500 Hz and 1 kHz, sequentially on the same output
+pin and verify both frequencies using a CRO/DSO or Logic Analyzer
+
+#include <reg51.h>
+sbit wave = P1^0;
+void main(void) {
+unsigned char i;
+TMOD = 0x01;
+wave = 0;
+while(1) {
+// Two cycles of 400 Hz
+for(i=0; i<4; i++) {
+TR0 = 0;
+TF0 = 0;
+TH0 = 0xFB;
+TL0 = 0x80;
+TR0 = 1;
+while(TF0 == 0);
+TR0 = 0;
+wave = ~wave;
+}
+// Two cycles of 900 Hz
+for(i=0; i<4; i++) {
+TR0 = 0;
+TF0 = 0;
+TH0 = 0xFE;
+TL0 = 0x00;
+TR0 = 1;
+while(TF0 == 0);
+TR0 = 0;
+wave = ~wave;
+}
+}
+}

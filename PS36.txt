@@ -1,0 +1,144 @@
+Using the LPC2148 microcontroller, configure the on-chip ADC to read an analog input from
+a potentiometer and display both the ADC count and the corresponding voltage value on a
+16×2 LCD.
+
+#include <LPC214X.H>
+
+#define RS       (1U << 11)
+#define EN       (1U << 10)
+#define RW       (1U << 20)
+#define LCD_DATA 0x00FF0000UL
+
+void delay(unsigned int count)
+{
+    unsigned int i, j;
+
+    for(i = 0; i < count; i++)
+        for(j = 0; j < 10; j++);
+}
+
+void lcd_cmd(unsigned char cmd)
+{
+    IOCLR0 = RS | RW;
+    IOCLR1 = LCD_DATA;
+    IOSET1 = ((unsigned int)cmd << 16);
+
+    IOSET0 = EN;
+    delay(10);
+    IOCLR0 = EN;
+    delay(100);
+}
+
+void lcd_dat(unsigned char dat)
+{
+    IOSET0 = RS;
+    IOCLR0 = RW;
+    IOCLR1 = LCD_DATA;
+    IOSET1 = ((unsigned int)dat << 16);
+
+    IOSET0 = EN;
+    delay(10);
+    IOCLR0 = EN;
+    delay(100);
+}
+
+void lcd_str(char *str)
+{
+    while(*str)
+        lcd_dat(*str++);
+}
+
+void lcd_init(void)
+{
+    PINSEL0 &= ~((3U << 20) | (3U << 22));
+    PINSEL1 &= ~(3U << 8);
+    PINSEL2 &= ~(1U << 3);
+
+    IODIR0 |= RS | EN | RW;
+    IODIR1 |= LCD_DATA;
+
+    IOCLR0 = RS | EN | RW;
+    IOCLR1 = LCD_DATA;
+
+    delay(2000);
+
+    lcd_cmd(0x38);
+    lcd_cmd(0x0C);
+    lcd_cmd(0x06);
+    lcd_cmd(0x01);
+
+    delay(200);
+}
+
+void lcd_number(unsigned int num)
+{
+    char digits[10];
+    int i = 0;
+
+    if(num == 0)
+    {
+        lcd_dat('0');
+        return;
+    }
+
+    while(num > 0)
+    {
+        digits[i++] = (num % 10) + '0';
+        num /= 10;
+    }
+
+    while(i > 0)
+        lcd_dat(digits[--i]);
+}
+
+unsigned int adc_read(void)
+{
+    AD0CR &= ~(7U << 24);
+    AD0CR |= (1U << 24);
+
+    while((AD0GDR & (1U << 31)) == 0);
+
+    return (AD0GDR >> 6) & 0x3FF;
+}
+
+int main(void)
+{
+    unsigned int adc, mv;
+    volatile unsigned int i, j;
+
+    lcd_init();
+
+    PINSEL1 &= ~(3U << 24);
+    PINSEL1 |= (1U << 24);
+
+    AD0CR = (1U << 1) | (3U << 8) | (1U << 21);
+
+    while(1)
+    {
+        adc = adc_read();
+
+        mv = (adc * 3300UL + 511) / 1023;
+
+        lcd_cmd(0x80);
+        lcd_str("ADC: ");
+        lcd_number(adc);
+        lcd_str("     ");
+
+        lcd_cmd(0xC0);
+        lcd_str("V: ");
+        lcd_number(mv / 1000);
+        lcd_dat('.');
+
+        if((mv % 1000) < 100)
+            lcd_dat('0');
+
+        if((mv % 1000) < 10)
+            lcd_dat('0');
+
+        lcd_number(mv % 1000);
+        lcd_str(" V   ");
+
+        for(i = 0; i < 500; i++)
+            for(j = 0; j < 1000; j++);
+    }
+}

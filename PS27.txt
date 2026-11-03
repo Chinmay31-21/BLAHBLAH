@@ -1,0 +1,24 @@
+Using KEIL microVision for the LPC2148 ARM7TDMI-S microcontroller, 
+write an ARM Assembly language program to subtract two 32-bit 
+numbers and observe the result and relevant CPSR flags.
+
+#CODE
+
+
+        AREA    RESET, CODE, READONLY
+        ENTRY
+        CODE32
+
+START
+        LDR     R0, =0x12345678
+        LDR     R1, =0x11111111
+
+        SUBS    R2, R0, R1
+
+        MRS     R3, CPSR
+
+STOP
+        B       STOP
+
+        END
+

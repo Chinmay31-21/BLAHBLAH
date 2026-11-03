@@ -1,0 +1,87 @@
+Using the LPC2148 microcontroller, configure the on-chip ADC, apply an analog input using a potentiometer, 
+perform A/D conversion, and display the corresponding digital ADC value on the serial terminal
+
+# CODE
+
+
+#include <lpc214x.h>
+
+unsigned int adc_value;
+
+void uart_init(void)
+{
+    PINSEL0 = 0x00000005;
+
+    U0LCR = 0x83;
+    U0DLM = 0x00;
+    U0DLL = 0x61;
+    U0LCR = 0x03;
+}
+
+void uart_tx(char ch)
+{
+    while(!(U0LSR & 0x20));
+    U0THR = ch;
+}
+
+void uart_string(char *str)
+{
+    while(*str)
+    {
+        uart_tx(*str);
+        str++;
+    }
+}
+
+void uart_number(unsigned int num)
+{
+    char digit[5];
+    int i = 0;
+
+    if(num == 0)
+    {
+        uart_tx('0');
+        return;
+    }
+
+    while(num > 0)
+    {
+        digit[i++] = (num % 10) + '0';
+        num = num / 10;
+    }
+
+    while(i > 0)
+        uart_tx(digit[--i]);
+}
+
+void adc_init(void)
+{
+    PINSEL1 &= ~(3UL << 24);
+    PINSEL1 |= (1UL << 24);
+
+    AD0CR = 0x00200302;
+}
+
+unsigned int adc_read(void)
+{
+    AD0CR = 0x01200302;
+
+    while(!(AD0DR1 & 0x80000000UL));
+
+    return (AD0DR1 >> 6) & 0x3FF;
+}
+
+int main(void)
+{
+    uart_init();
+    adc_init();
+
+    while(1)
+    {
+        adc_value = adc_read();
+
+        uart_string("ADC VALUE = ");
+        uart_number(adc_value);
+        uart_string("\r\n");
+    }
+}

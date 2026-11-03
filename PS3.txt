@@ -1,0 +1,41 @@
+#include <reg51.h>
+
+sbit OUT = P1^0;
+
+void main()
+{
+    unsigned int i;
+
+    TMOD = 0x10;
+
+    while(1)
+    {
+        for(i = 0; i < 1000; i++)
+        {
+            OUT = ~OUT;
+
+            TH1 = 0xFC;
+            TL1 = 0x66;
+            TF1 = 0;
+            TR1 = 1;
+
+            while(TF1 == 0);
+
+            TR1 = 0;
+        }
+
+        for(i = 0; i < 1000; i++)
+        {
+            OUT = ~OUT;
+
+            TH1 = 0xFE;
+            TL1 = 0x33;
+            TF1 = 0;
+            TR1 = 1;
+
+            while(TF1 == 0);
+
+            TR1 = 0;
+        }
+    }
+}

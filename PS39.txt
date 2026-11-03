@@ -1,0 +1,154 @@
+Using the LPC2148 microcontroller, configure the RTC alarm for a specified time, display
+the real-time date and time on a 16x2 LCD, and turn ON an LED when the alarm time is
+reached.
+
+
+#include <LPC214X.H>
+#include <stdio.h>
+
+#define RS       (1U << 11)
+#define EN       (1U << 10)
+#define RW       (1U << 20)
+#define LCD_DATA 0x00FF0000
+#define LED      (1U << 31)
+
+char data[20];
+
+void delay(unsigned int count)
+{
+    unsigned int i, j;
+
+    for(i = 0; i < count; i++)
+        for(j = 0; j < 10; j++);
+}
+
+void lcd_cmd(unsigned char cmd)
+{
+    IOCLR0 = RS | RW;
+    IOCLR1 = LCD_DATA;
+    IOSET1 = ((unsigned int)cmd << 16);
+
+    IOSET0 = EN;
+    delay(10);
+    IOCLR0 = EN;
+    delay(100);
+}
+
+void lcd_dat(unsigned char dat)
+{
+    IOSET0 = RS;
+    IOCLR0 = RW;
+    IOCLR1 = LCD_DATA;
+    IOSET1 = ((unsigned int)dat << 16);
+
+    IOSET0 = EN;
+    delay(10);
+    IOCLR0 = EN;
+    delay(100);
+}
+
+void lcd_str(char *str)
+{
+    while(*str)
+        lcd_dat(*str++);
+}
+
+void lcd_init(void)
+{
+    PINSEL0 &= ~((3U << 20) | (3U << 22));
+    PINSEL1 &= ~(3U << 8);
+    PINSEL2 &= ~(1U << 3);
+
+    IODIR0 |= RS | EN | RW;
+    IODIR1 |= LCD_DATA | LED;
+
+    IOCLR0 = RS | EN | RW;
+    IOCLR1 = LCD_DATA | LED;
+
+    delay(2000);
+
+    lcd_cmd(0x38);
+    lcd_cmd(0x0C);
+    lcd_cmd(0x06);
+    lcd_cmd(0x01);
+
+    delay(200);
+}
+
+void rtc_init(void)
+{
+    CCR = 0x02;
+    CCR = 0x00;
+
+    PREINT = 456;
+    PREFRAC = 25024;
+
+    SEC = 0;
+    MIN = 9;
+    HOUR = 10;
+
+    DOM = 3;
+    MONTH = 11;
+    YEAR = 2026;
+    DOW = 2;
+
+    ALSEC = 0;
+    ALMIN = 10;
+    ALHOUR = 10;
+
+    AMR = 0xF8;
+
+    ILR = 0x03;
+
+    CCR = 0x01;
+}
+
+void lcd_two_digit(unsigned int num)
+{
+    lcd_dat((num / 10) + '0');
+    lcd_dat((num % 10) + '0');
+}
+
+int main(void)
+{
+    unsigned int h, m, s;
+    unsigned int d, mon, y;
+
+    lcd_init();
+    rtc_init();
+
+    while(1)
+    {
+        h = HOUR;
+        m = MIN;
+        s = SEC;
+
+        d = DOM;
+        mon = MONTH;
+        y = YEAR;
+
+        lcd_cmd(0x80);
+
+        lcd_str("Date: ");
+        lcd_two_digit(d);
+        lcd_dat('/');
+        lcd_two_digit(mon);
+        lcd_dat('/');
+        lcd_dat((y / 1000) % 10 + '0');
+        lcd_dat((y / 100) % 10 + '0');
+        lcd_dat((y / 10) % 10 + '0');
+        lcd_dat(y % 10 + '0');
+
+        lcd_cmd(0xC0);
+
+        sprintf(data, "Time: %02d:%02d:%02d",
+                (int)h, (int)m, (int)s);
+
+        lcd_str(data);
+
+        if(ILR & 0x02)
+        {
+            IOSET1 = LED;
+        }
+    }
+}

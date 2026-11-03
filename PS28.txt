@@ -1,0 +1,22 @@
+Using KEIL microVision for the LPC2148 ARM7TDMI-S microcontroller, write an ARM Assembly language program to 
+perform AND, OR, and XOR operations on two 32-bit values and observe the results in separate registers.
+
+#CODE
+
+
+        AREA    RESET, CODE, READONLY
+        ENTRY
+        CODE32
+
+START
+        LDR     R0, =0x12345678
+        LDR     R1, =0x0F0F0F0F
+
+        AND     R2, R0, R1
+        ORR     R3, R0, R1
+        EOR     R4, R0, R1
+
+STOP
+        B       STOP
+
+        END

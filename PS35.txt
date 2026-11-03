@@ -1,0 +1,64 @@
+Using the LPC2148 microcontroller, continuously sample an analog input using the on-chip
+ADC and transmit 'LOW' or 'HIGH' to the serial terminal depending on whether the ADC value
+is below or above a specified threshold.
+
+
+#include <LPC214X.H>
+
+void uart_init(void)
+{
+    PINSEL0 = 0x00000005;
+
+    U0LCR = 0x83;
+    U0DLM = 0x00;
+    U0DLL = 0x61;
+    U0LCR = 0x03;
+}
+
+void uart_char(char ch)
+{
+    while(!(U0LSR & 0x20));
+    U0THR = ch;
+}
+
+void uart_string(char *str)
+{
+    while(*str)
+        uart_char(*str++);
+}
+
+unsigned int adc_read(void)
+{
+    AD0CR &= ~(7U << 24);
+    AD0CR |= (1U << 24);
+
+    while((AD0GDR & (1U << 31)) == 0);
+
+    return (AD0GDR >> 6) & 0x3FF;
+}
+
+int main(void)
+{
+    unsigned int adc;
+    volatile unsigned int i, j;
+
+    PINSEL1 &= ~(3U << 24);
+    PINSEL1 |= (1U << 24);
+
+    uart_init();
+
+    AD0CR = (1U << 1) | (3U << 8) | (1U << 21);
+
+    while(1)
+    {
+        adc = adc_read();
+
+        if(adc < 512)
+            uart_string("LOW\r\n");
+        else
+            uart_string("HIGH\r\n");
+
+        for(i = 0; i < 500; i++)
+            for(j = 0; j < 1000; j++);
+    }
+}

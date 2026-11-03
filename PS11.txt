@@ -1,0 +1,39 @@
+PS11 — Start an 8-bit up-counter and reset it
+Connections: LEDs on PORTB, start button on RA0, reset button on RA1.
+#include <xc.h>
+
+void delay()
+{
+    unsigned int i;
+    for(i=0; i<50000; i++);
+}
+
+void main()
+{
+    unsigned char count = 0;
+
+    ADCON1 = 0x0F;
+    TRISB = 0x00;
+    TRISA = 0x03;
+
+    PORTB = 0;
+
+    while(1)
+    {
+        if(RA1 == 0)
+        {
+            count = 0;
+            PORTB = count;
+            while(RA1 == 0);
+        }
+
+        if(RA0 == 0)
+        {
+            while(RA1 == 1)
+            {
+                PORTB = count++;
+                delay();
+            }
+        }
+    }
+}

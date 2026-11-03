@@ -1,0 +1,39 @@
+PS12 — Shift one glowing LED left or right
+Connections: LEDs on PORTB, left-shift button on RA0, right-shift button on RA1.
+#include <xc.h>
+
+void delay()
+{
+    unsigned int i;
+    for(i=0; i<50000; i++);
+}
+
+void main()
+{
+    unsigned char x = 0x01;
+
+    ADCON1 = 0x0F;
+    TRISB = 0x00;
+    TRISA = 0x03;
+
+    while(1)
+    {
+        PORTB = x;
+
+        if(RA0 == 0)
+        {
+            x = x << 1;
+            if(x == 0) x = 0x01;
+            while(RA0 == 0);
+        }
+
+        if(RA1 == 0)
+        {
+            x = x >> 1;
+            if(x == 0) x = 0x80;
+            while(RA1 == 0);
+        }
+
+        delay();
+    }
+}

@@ -1,0 +1,128 @@
+PS16 — Read potentiometer and display ADC value on LCD
+Connections: Potentiometer to AN0; LCD uses the PS13 connection.
+#include <xc.h>
+
+#define RS RE0
+#define EN RE1
+
+void delay()
+{
+    unsigned int i;
+    for(i=0; i<1000; i++);
+}
+
+void cmd(unsigned char a)
+{
+    RS = 0;
+    PORTD = (PORTD & 0x0F) | (a & 0xF0);
+    EN = 1; delay(); EN = 0;
+    PORTD = (PORTD & 0x0F) | (a << 4);
+    EN = 1; delay(); EN = 0;
+}
+
+void data(unsigned char a)
+{
+    RS = 1;
+    PORTD = (PORTD & 0x0F) | (a & 0xF0);
+    EN = 1; delay(); EN = 0;
+    PORTD = (PORTD & 0x0F) | (a << 4);
+    EN = 1; delay(); EN = 0;
+}
+
+void main()
+{
+    unsigned int adc;
+    char d[4];
+    int i;
+
+    TRISA = 0x01;
+    TRISD = 0x00;
+    TRISE = 0x00;
+
+    ADCON1 = 0x0E;
+    ADCON2 = 0xA9;
+    ADCON0 = 0x01;
+
+    cmd(0x02);
+    cmd(0x28);
+    cmd(0x0C);
+    cmd(0x06);
+
+    while(1)
+    {
+        GO = 1;
+        while(GO == 1);
+
+        adc = (ADRESH << 8) | ADRESL;
+
+        d[0] = adc/1000 + '0';
+        d[1] = (adc/100)%10 + '0';
+        d[2] = (adc/10)%10 + '0';
+        d[3] = adc%10 + '0';
+
+        cmd(0x80);
+        data('A'); data('D'); data('C'); data(':'); data(' ');
+
+        for(i=0; i<4; i++)
+            data(d[i]);
+    }
+}
+
+
+PS17 — Display COUNT and an increasing count from 00 to 99
+#include <xc.h>
+
+#define RS RE0
+#define EN RE1
+
+void delay()
+{
+    unsigned int i;
+    for(i=0; i<50000; i++);
+}
+
+void cmd(unsigned char a)
+{
+    RS = 0;
+    PORTD = (PORTD & 0x0F) | (a & 0xF0);
+    EN = 1; delay(); EN = 0;
+    PORTD = (PORTD & 0x0F) | (a << 4);
+    EN = 1; delay(); EN = 0;
+}
+
+void data(unsigned char a)
+{
+    RS = 1;
+    PORTD = (PORTD & 0x0F) | (a & 0xF0);
+    EN = 1; delay(); EN = 0;
+    PORTD = (PORTD & 0x0F) | (a << 4);
+    EN = 1; delay(); EN = 0;
+}
+
+void main()
+{
+    unsigned char i;
+
+    ADCON1 = 0x0F;
+    TRISD = 0x00;
+    TRISE = 0x00;
+
+    cmd(0x02);
+    cmd(0x28);
+    cmd(0x0C);
+    cmd(0x06);
+
+    cmd(0x80);
+    data('C'); data('O'); data('U'); data('N'); data('T');
+
+    while(1)
+    {
+        for(i=0; i<100; i++)
+        {
+            cmd(0xC0);
+            data((i/10) + '0');
+            data((i%10) + '0');
+            delay();
+        }
+    }
+}

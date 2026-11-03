@@ -1,0 +1,31 @@
+PS10 — Increment and decrement an 8-bit count
+Connections: LEDs on PORTB, increment button on RA0, decrement button on RA1.
+#include <xc.h>
+
+void main()
+{
+    unsigned char count = 0;
+
+    ADCON1 = 0x0F;
+    TRISB = 0x00;
+    TRISA = 0x03;
+
+    PORTB = 0;
+
+    while(1)
+    {
+        if(RA0 == 0)
+        {
+            count++;
+            PORTB = count;
+            while(RA0 == 0);
+        }
+
+        if(RA1 == 0)
+        {
+            count--;
+            PORTB = count;
+            while(RA1 == 0);
+        }
+    }
+}

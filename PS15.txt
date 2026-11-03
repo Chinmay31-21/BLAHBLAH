@@ -1,0 +1,28 @@
+PS15 — ADC threshold detection and LED control
+Connections: Potentiometer output to AN0, LED on RB0. Example threshold: 512 (10-bit ADC).
+#include <xc.h>
+
+void main()
+{
+    unsigned int adc;
+
+    TRISAbits.TRISA0 = 1;
+    TRISBbits.TRISB0 = 0;
+
+    ADCON1 = 0x0E;
+    ADCON2 = 0xA9;
+    ADCON0 = 0x01;
+
+    while(1)
+    {
+        GO = 1;
+        while(GO == 1);
+
+        adc = (ADRESH << 8) | ADRESL;
+
+        if(adc > 512)
+            RB0 = 1;
+        else
+            RB0 = 0;
+    }
+}

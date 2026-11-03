@@ -1,0 +1,23 @@
+PS4 — Continuously transmit name using UART
+#include <reg51.h>
+
+void main()
+{
+    char s[] = "Chinmay\n";
+    unsigned int i;
+
+    TMOD = 0x20;
+    TH1 = 0xFD;
+    SCON = 0x50;
+    TR1 = 1;
+
+    while(1)
+    {
+        for(i=0; s[i]!='\0'; i++)
+        {
+            SBUF = s[i];
+            while(TI == 0);
+            TI = 0;
+        }
+    }
+}

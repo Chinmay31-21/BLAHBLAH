@@ -1,0 +1,25 @@
+PS9 — Timer delay to toggle an LED periodically
+#include <xc.h>
+
+void main()
+{
+    ADCON1 = 0x0F;
+    TRISB = 0x00;
+    PORTB = 0x00;
+
+    T0CON = 0x07;
+
+    while(1)
+    {
+        TMR0H = 0x00;
+        TMR0L = 0x00;
+        T0CONbits.TMR0ON = 1;
+
+        while(INTCONbits.TMR0IF == 0);
+
+        T0CONbits.TMR0ON = 0;
+        INTCONbits.TMR0IF = 0;
+
+        PORTBbits.RB0 = ~PORTBbits.RB0;
+    }
+}

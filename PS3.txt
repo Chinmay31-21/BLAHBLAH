@@ -1,3 +1,4 @@
+PS3 — Two cycles of 400 Hz followed by two cycles of 900 Hz
 #include <reg51.h>
 
 sbit OUT = P1^0;
@@ -10,31 +11,25 @@ void main()
 
     while(1)
     {
-        for(i = 0; i < 1000; i++)
+        for(i=0; i<4; i++)
         {
             OUT = ~OUT;
-
-            TH1 = 0xFC;
-            TL1 = 0x66;
+            TH1 = 0xFB;
+            TL1 = 0x1E;
             TF1 = 0;
             TR1 = 1;
-
             while(TF1 == 0);
-
             TR1 = 0;
         }
 
-        for(i = 0; i < 1000; i++)
+        for(i=0; i<4; i++)
         {
             OUT = ~OUT;
-
-            TH1 = 0xFE;
-            TL1 = 0x33;
+            TH1 = 0xFD;
+            TL1 = 0xF0;
             TF1 = 0;
             TR1 = 1;
-
             while(TF1 == 0);
-
             TR1 = 0;
         }
     }
